@@ -417,7 +417,7 @@ class TestCocoUtils:
             logger.debug(f"{type(imageid2annotationlist_mapping[image_id][0])}")
             image_ids = []
             for annotationlist in imageid2annotationlist_mapping[image_id]:
-                # TODO: get_imageid2annotationlist_mapping is supposed to get CocoAnnotation, not a dict
+                # get_imageid2annotationlist_mapping returns annotation dictionaries, not CocoAnnotation objects
                 assert isinstance(annotationlist, dict)
                 image_ids.append(annotationlist["image_id"])
             assert image_ids == [image_id] * len(image_ids)
@@ -668,7 +668,7 @@ class TestCocoUtils:
 
     def test_cocovid(self):
         # from sahi.utils.coco import CocoVid
-        # TODO
+        # CocoVid functionality is not yet implemented
         pass
 
     def test_bbox_clipping(self):
