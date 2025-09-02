@@ -140,83 +140,87 @@ def get_prediction(
 
 
 def get_sliced_prediction(
-    image,
-    detection_model=None,
+    image: Union[str, np.ndarray],
+    detection_model: DetectionModel,
     slice_height: Optional[int] = None,
     slice_width: Optional[int] = None,
-    overlap_height_ratio: float = 0.2,
-    overlap_width_ratio: float = 0.2,
-    perform_standard_pred: bool = True,
-    postprocess_type: str = "GREEDYNMM",
-    postprocess_match_metric: str = "IOS",
-    postprocess_match_threshold: float = 0.5,
-    postprocess_class_agnostic: bool = False,
-    verbose: int = 1,
+    overlap_height_ratio: Optional[float] = 0.2,
+    overlap_width_ratio: Optional[float] = 0.2,
+    perform_standard_pred: Optional[bool] = True,
+    postprocess_type: Optional[str] = "GREEDYNMM",
+    postprocess_match_metric: Optional[str] = "IOS",
+    postprocess_match_threshold: Optional[float] = 0.5,
+    postprocess_class_agnostic: Optional[bool] = False,
+    verbose: Optional[int] = 1,
     merge_buffer_length: Optional[int] = None,
-    auto_slice_resolution: bool = True,
+    auto_slice_resolution: Optional[bool] = True,
     slice_export_prefix: Optional[str] = None,
     slice_dir: Optional[str] = None,
     exclude_classes_by_name: Optional[List[str]] = None,
     exclude_classes_by_id: Optional[List[int]] = None,
 ) -> PredictionResult:
     """
-    Function for slice image + get predicion for each slice + combine predictions in full image.
+    Perform detection on an image by slicing it into smaller patches, running inference on each slice,
+    and then merging the predictions into a unified result for the full image.
 
-    Args:
-        image: str or np.ndarray
-            Location of image or numpy image matrix to slice
-        detection_model: model.DetectionModel
-        slice_height: int
-            Height of each slice.  Defaults to ``None``.
-        slice_width: int
-            Width of each slice.  Defaults to ``None``.
-        overlap_height_ratio: float
-            Fractional overlap in height of each window (e.g. an overlap of 0.2 for a window
-            of size 512 yields an overlap of 102 pixels).
-            Default to ``0.2``.
-        overlap_width_ratio: float
-            Fractional overlap in width of each window (e.g. an overlap of 0.2 for a window
-            of size 512 yields an overlap of 102 pixels).
-            Default to ``0.2``.
-        perform_standard_pred: bool
-            Perform a standard prediction on top of sliced predictions to increase large object
-            detection accuracy. Default: True.
-        postprocess_type: str
-            Type of the postprocess to be used after sliced inference while merging/eliminating predictions.
-            Options are 'NMM', 'GREEDYNMM' or 'NMS'. Default is 'GREEDYNMM'.
-        postprocess_match_metric: str
-            Metric to be used during object prediction matching after sliced prediction.
-            'IOU' for intersection over union, 'IOS' for intersection over smaller area.
-        postprocess_match_threshold: float
-            Sliced predictions having higher iou than postprocess_match_threshold will be
-            postprocessed after sliced prediction.
-        postprocess_class_agnostic: bool
-            If True, postprocess will ignore category ids.
-        verbose: int
-            0: no print
-            1: print number of slices (default)
-            2: print number of slices and slice/prediction durations
-        merge_buffer_length: int
-            The length of buffer for slices to be used during sliced prediction, which is suitable for low memory.
-            It may affect the AP if it is specified. The higher the amount, the closer results to the non-buffered.
-            scenario. See [the discussion](https://github.com/obss/sahi/pull/445).
-        auto_slice_resolution: bool
-            if slice parameters (slice_height, slice_width) are not given,
-            it enables automatically calculate these params from image resolution and orientation.
-        slice_export_prefix: str
-            Prefix for the exported slices. Defaults to None.
-        slice_dir: str
-            Directory to save the slices. Defaults to None.
-        exclude_classes_by_name: Optional[List[str]]
-            None: if no classes are excluded
-            List[str]: set of classes to exclude using its/their class label name/s
-        exclude_classes_by_id: Optional[List[int]]
-            None: if no classes are excluded
-            List[int]: set of classes to exclude using one or more IDs
-    Returns:
-        A Dict with fields:
-            object_prediction_list: a list of sahi.prediction.ObjectPrediction
-            durations_in_seconds: a dict containing elapsed times for profiling
+    Arguments
+    ----------
+    image : str or np.ndarray
+        Path to the image file or a numpy array representing the image.
+    detection_model : DetectionModel
+        The detection model to use for inference. Must implement SAHI's DetectionModel interface.
+    slice_height : Optional[int], default=None
+        Height (in pixels) of each image slice. Automatically determined if None and auto_slice_resolution is True.
+    slice_width : Optional[int], default=None
+        Width (in pixels) of each image slice. Automatically determined if None and auto_slice_resolution is True.
+    overlap_height_ratio : Optional[float], default=0.2
+        Fraction of overlap between slices along the height. E.g., 0.2 means 20% overlap.
+    overlap_width_ratio : Optional[float], default=0.2
+        Fraction of overlap between slices along the width. E.g., 0.2 means 20% overlap.
+    perform_standard_pred : Optional[bool], default=True
+        If True, also run detection on the full image to improve detection of large objects.
+    postprocess_type : Optional[str], default="GREEDYNMM"
+        Method for merging overlapping predictions. Options: 'NMM', 'GREEDYNMM', 'LSNMS', 'NMS'.
+    postprocess_match_metric : Optional[str], default="IOS"
+        Metric used to match overlapping predictions. Options: 'IOU' (intersection over union), 'IOS' (intersection over smaller area).
+    postprocess_match_threshold : Optional[float], default=0.5
+        Overlap threshold for merging predictions. Higher values mean stricter merging.
+    postprocess_class_agnostic : Optional[bool], default=False
+        If True, merge predictions regardless of their class labels.
+    verbose : Optional[int], default=1
+        Verbosity level: 0 = silent, 1 = progress, 2 = detailed timing.
+    merge_buffer_length : Optional[int], default=None
+        Number of predictions to keep in buffer before merging (for memory efficiency). Set to None to disable.
+    auto_slice_resolution : Optional[bool], default=True
+        If True and slice_height/slice_width are not provided, determine slice size from image resolution.
+    slice_export_prefix : Optional[str], default=None
+        Prefix for exported slice filenames (if exporting slices).
+    slice_dir : Optional[str], default=None
+        Directory to save the image slices (if exporting).
+    exclude_classes_by_name : Optional[List[str]], default=None
+        List of class names to ignore during prediction.
+    exclude_classes_by_id : Optional[List[int]], default=None
+        List of class IDs to ignore during prediction.
+
+    Returns
+    -------
+    PredictionResult
+        An object containing:
+            - object_prediction_list: List of ObjectPrediction for detected objects.
+            - durations_in_seconds: Dictionary with timing information for slicing, prediction, and postprocessing.
+
+    Raises
+    ------
+    ValueError
+        If an invalid postprocess_type is provided.
+
+    Notes
+    -----
+    - If either slice_height or slice_width is not specified and auto_slice_resolution is True,
+      the function will attempt to automatically determine optimal slice sizes.
+    - For detection models producing oriented bounding boxes (OBB), only NMS postprocessing is supported.
+    - This function is useful for large images where direct inference is infeasible or where small object detection is important.
+
     """
 
     # for profiling
