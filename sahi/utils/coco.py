@@ -1116,9 +1116,7 @@ class Coco:
                     image_id_set.add(image_id)
                 # select annotations of the image
                 annotation_list = image_id_to_annotation_list[image_id]
-                # TODO: coco_annotation_dict is of type CocoAnnotation according to how image_id_to_annotation_list
-                # was created. Either image_id_to_annotation_list is not defined correctly or the following
-                # loop is wrong as it expects a dict.
+                # Process annotation dictionaries (as returned by get_imageid2annotationlist_mapping)
                 for coco_annotation_dict in annotation_list:
                     # apply category remapping if remapping_dict is provided
                     if coco.remapping_dict is not None:
@@ -1675,7 +1673,7 @@ def export_single_yolo_image_and_corresponding_txt(
     if Path(coco_image.file_name).suffix == "":
         print(f"image file has no suffix, skipping it: '{coco_image.file_name}'")
         return
-    elif Path(coco_image.file_name).suffix in [".txt"]:  # TODO: extend this list
+    elif Path(coco_image.file_name).suffix in [".txt", ".xml", ".json", ".csv", ".log", ".md", ".yml", ".yaml", ".py", ".js", ".html", ".css"]:  # common non-image file extensions
         print(f"image file has incorrect suffix, skipping it: '{coco_image.file_name}'")
         return
     # set coco and yolo image paths
@@ -1940,7 +1938,7 @@ def merge_from_file(coco_path1: str, coco_path2: str, save_path: str):
     save_json(merged_coco_dict, save_path)
 
 
-def get_imageid2annotationlist_mapping(coco_dict: dict) -> Dict[int, List[CocoAnnotation]]:
+def get_imageid2annotationlist_mapping(coco_dict: dict) -> Dict[int, List[dict]]:
     """
     Get image_id to annotationlist mapping for faster indexing.
 
@@ -1952,12 +1950,12 @@ def get_imageid2annotationlist_mapping(coco_dict: dict) -> Dict[int, List[CocoAn
     -------
         image_id_to_annotation_list : dict
         {
-            1: [CocoAnnotation, CocoAnnotation, CocoAnnotation],
-            2: [CocoAnnotation]
+            1: [annotation_dict, annotation_dict, annotation_dict],
+            2: [annotation_dict]
         }
 
         where
-        CocoAnnotation = {
+        annotation_dict = {
             'area': 2795520,
             'bbox': [491.0, 1035.0, 153.0, 182.0],
             'category_id': 1,
