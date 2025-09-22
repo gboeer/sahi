@@ -68,7 +68,7 @@ jobs:
           uv --version
 
       - name: Install sahi from PyPI
-        if: github.event_name == 'schedule'
+        if: github.event_name != 'schedule'
         run: |
           rm -fr sahi
           uv pip install --force-reinstall sahi
