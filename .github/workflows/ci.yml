@@ -71,6 +71,7 @@ jobs:
         if: github.event_name != 'schedule'
         run: |
           rm -fr sahi
+          uv pip uninstall sahi
           uv pip install --force-reinstall --no-cache-dir sahi
           uv pip show sahi
           uv run python -c "import sahi; print(sahi.__version__)"
