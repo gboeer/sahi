@@ -70,6 +70,7 @@ jobs:
       - name: Install sahi from PyPI
         if: github.event_name != 'schedule'
         run: |
+          rm -fr sahi
           uv pip install sahi
           uv pip show sahi
           uv run python -c "import sahi; print(sahi.__version__)"
