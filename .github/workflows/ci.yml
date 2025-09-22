@@ -55,7 +55,7 @@ jobs:
 
       - name: Install dependencies
         if: github.event_name != 'schedule'
-        run: uv sync --group dev --extra ci
+        run: uv sync --group dev --extra ci --no-install sahi
       - name: List installed packages
         run: |
           echo "=== Installed Python packages ==="
@@ -70,9 +70,7 @@ jobs:
       - name: Install sahi from PyPI
         if: github.event_name != 'schedule'
         run: |
-          rm -fr sahi
-          uv pip uninstall sahi
-          uv pip install --force-reinstall --no-cache-dir sahi
+          uv pip install sahi
           uv pip show sahi
           uv run python -c "import sahi; print(sahi.__version__)"
       - name: Test with python ${{ matrix.python-version }}
