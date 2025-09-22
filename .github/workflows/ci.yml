@@ -52,10 +52,11 @@ jobs:
           key: ${{ runner.os }}-models-${{ hashFiles('sahi/utils/huggingface.py', 'sahi/utils/yolov5.py', 'sahi/utils/ultralytics.py', 'sahi/utils/rtdetr.py', 'sahi/utils/torchvision.py') }}
           restore-keys: |
             ${{ runner.os }}-models-
-
+      - name: Hide local sahi folder
+        run: mv sahi _sahi_tmp
       - name: Install dependencies
         if: github.event_name != 'schedule'
-        run: uv sync --group dev --extra ci --no-install sahi
+        run: uv sync --group dev --extra ci
       - name: List installed packages
         run: |
           echo "=== Installed Python packages ==="
@@ -70,7 +71,6 @@ jobs:
       - name: Install sahi from PyPI
         if: github.event_name != 'schedule'
         run: |
-          rm -fr sahi
           uv pip install sahi
           uv pip show sahi
           uv run python -c "import sahi; print(sahi.__version__)"
